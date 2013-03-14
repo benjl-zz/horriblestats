@@ -3,19 +3,21 @@ require 'csv'
 class Sample
 	attr_accessor :user_filename, :ballot_filename
 
-	def initialize(user_filename,ballot_filename,country)
+	def initialize(user_filename,ballot_filename,country,survey_filename)
 		#Parses defined CSV value as a nested Hash in the format of "id" => "row" where row is itself header => field. Accessed ex: sample["411"]["email"]		
 		@sample = {} #hash of hashes containing user data (:411 => :email => 'example@example.com')
 		@headers = [] #array of headers from LDP_User_Basic SQL file
 		@btypes = []
 		@country = country #ca or us
 		bheads = []
+		sheads = []
 		a = {}
-		b = {}
 		linecount = 0
 		output = ""
 
-		puts "Opening user file..."
+
+		#------USER FILE---------
+		puts "Opening user file (this can take a very long time)..."
 		CSV.open("#{user_filename}", 'r', ',') do |row|
 			if linecount === 0
 				(0..row.length).each do |x|
@@ -38,7 +40,9 @@ class Sample
 		end
 		puts "User file succesfully loaded"
 
-		puts "Opening ballot file..."
+
+		#------BALLOT FILE---------
+		puts "Opening ballot file (this will take an even longer time)..."
 		linecount = 0
 		CSV.open("#{ballot_filename}", 'r', ',') do |row|
 			if linecount === 0
@@ -60,14 +64,47 @@ class Sample
 			print output
 		end
 		puts "Ballot file succesfully loaded"
+
+		#------SURVEY FILE---------
+		puts "Opening survey file (guess what - it takes a while!)..."
+		linecount = 0
+		answers = {}
+		CSV.open("#{survey_filename}", 'r', ',') do |row|
+			if linecount === 0
+				(1..row.length-1).each do |x|
+					sheads.push(row[x])
+				end
+			else
+				(1..row.length-1).each do |y|
+					if !@sample[row[0]].nil?
+						answers[sheads[y]] = row[y]
+					end
+				end
+				if !@sample[row[0]].nil?
+					@sample[row[0]]['responses'] = answers
+				else
+					puts "User #{row[0]} not found in User file. Excluding."
+				end
+			end
+			answers = {}
+			linecount += 1
+			if linecount % 2 === 0
+				output = "working o" + "\r"
+			else
+				output = "working *" + "\r"
+			end
+			print output
+		end
+		puts "Survey file succesfully loaded"
+		puts "#{@sample['440']}"
+
 	end
 
 	def generate_demos(requestarr)
 		#generates a nested hash (demos[:region][:wa], demos[:age][:18to34]) for region and age - gender, age, and income unavailable
-
 		if requestarr.include?("region")
 			#------REGION---------
-			if @country = "us"
+			if @country === "us"
 					@demos = {:region => {:total => [0.00], :newengland => [0.00,0.00], :midatlantic => [0.00,0.00], :eastnorthcentral => [0.00,0.00], :westnorthcentral => [0.00,0.00], :southatlantic => [0.00,0.00], :eastsouthcentral => [0.00,0.00], :westsouthcentral => [0.00,0.00], :mountain => [0.00,0.00], :pacific => [0.00,0.00], :other => [0.00,0.00]}, :age => {:total => [0.00], :eighteenthirtyfour => [0.00,0.00], :thirtyfivefiftyfour => [0.00,0.00], :fiftyfiveplus => [0.00,0.00], :other => [0.00,0.00]}}
 					@counts = {:region => {:total => [],:newengland => [], :midatlantic => [], :eastnorthcentral => [], :westnorthcentral => [], :southatlantic => [], :eastsouthcentral => [], :westsouthcentral => [], :mountain => [], :pacific => [], :other => []}, :age => {:total => [], :eighteenthirtyfour => [], :thirtyfivefiftyfour => [], :fiftyfiveplus => [], :other => []}}
 
@@ -108,7 +145,7 @@ class Sample
 					@demos[:region][:total][0] += 1.00
 					@counts[:region][:total].push(key.to_s)
 				end
-			elsif @country = 'ca'
+			elsif @country === 'ca'
 					@demos = {:region => {:total => [0.00], :bc => [0.00,0.00], :ab => [0.00,0.00], :sk_mb => [0.00,0.00], :on => [0.00,0.00], :qc => [0.00,0.00], :atl => [0.00,0.00], :nth => [0.00,0.00], :other => [0.00,0.00]}, :age => {:total => [0.00], :eighteenthirtyfour => [0.00,0.00], :thirtyfivefiftyfour => [0.00,0.00], :fiftyfiveplus => [0.00,0.00], :other => [0.00,0.00]}}
 					@counts = {:region => {:total => [],:bc => [], :ab => [], :sk_mb => [], :on => [], :qc => [], :atl => [], :nth => [], :other => []}, :age => {:total => [], :eighteenthirtyfour => [], :thirtyfivefiftyfour => [], :fiftyfiveplus => [], :other => []}}
 				puts "Gathering region demos..."
@@ -178,10 +215,6 @@ class Sample
 		end	
 		puts "Done."
 		return @demos
-	end
-
-	def stubify()
-
 	end
 
 	def printify(filename,requestarr)

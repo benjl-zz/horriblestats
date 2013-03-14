@@ -7,6 +7,7 @@ if userdata === ''
 elsif userdata === '1'
 	userdata = "user_subsample.csv"
 end
+
 puts "Enter CSV for ballot data. Leave blank for user_ballots.csv, 1 for subsample"
 ballotdata = gets.chomp
 if ballotdata === ''
@@ -14,14 +15,20 @@ if ballotdata === ''
 elsif ballotdata === '1'
 	ballotdata = "user_ballot_sub.csv"
 end
+
+puts "Enter CSV for survey data..."
+survey = gets.chomp
+
 puts "Enter country of promotion (ca or us)."
 country = gets.chomp
 
-sample = Sample.new(userdata,ballotdata,country)
 
-dems = sample.generate_demos(["region"])
 
-sample.printify('demos_sobeys.csv',['region'])
+sample = Sample.new(userdata,ballotdata,country,survey)
+
+dems = sample.generate_demos(['region','age'])
+
+sample.printify('demos_sobeys.csv',['region','age'])
 
 puts "OPERATION COMPLETED BITCHES! :D"
 
