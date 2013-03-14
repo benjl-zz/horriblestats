@@ -14,12 +14,14 @@ if ballotdata === ''
 elsif ballotdata === '1'
 	ballotdata = "user_ballot_sub.csv"
 end
+puts "Enter country of promotion (ca or us)."
+country = gets.chomp
 
-sample = Sample.new(userdata,ballotdata)
+sample = Sample.new(userdata,ballotdata,country)
 
-dems = sample.generate_demos
+dems = sample.generate_demos(["region"])
 
-sample.printify('demos.csv',['region','age'])
+sample.printify('demos_sobeys.csv',['region'])
 
 puts "OPERATION COMPLETED BITCHES! :D"
 

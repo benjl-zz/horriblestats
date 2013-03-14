@@ -3,11 +3,12 @@ require 'csv'
 class Sample
 	attr_accessor :user_filename, :ballot_filename
 
-	def initialize(user_filename,ballot_filename)
+	def initialize(user_filename,ballot_filename,country)
 		#Parses defined CSV value as a nested Hash in the format of "id" => "row" where row is itself header => field. Accessed ex: sample["411"]["email"]		
 		@sample = {} #hash of hashes containing user data (:411 => :email => 'example@example.com')
 		@headers = [] #array of headers from LDP_User_Basic SQL file
 		@btypes = []
+		@country = country #ca or us
 		bheads = []
 		a = {}
 		b = {}
@@ -61,71 +62,111 @@ class Sample
 		puts "Ballot file succesfully loaded"
 	end
 
-	def generate_demos()
+	def generate_demos(requestarr)
 		#generates a nested hash (demos[:region][:wa], demos[:age][:18to34]) for region and age - gender, age, and income unavailable
-		@demos = {:region => {:total => [0.00], :newengland => [0.00,0.00], :midatlantic => [0.00,0.00], :eastnorthcentral => [0.00,0.00], :westnorthcentral => [0.00,0.00], :southatlantic => [0.00,0.00], :eastsouthcentral => [0.00,0.00], :westsouthcentral => [0.00,0.00], :mountain => [0.00,0.00], :pacific => [0.00,0.00], :other => [0.00,0.00]}, :age => {:total => [0.00], :eighteenthirtyfour => [0.00,0.00], :thirtyfivefiftyfour => [0.00,0.00], :fiftyfiveplus => [0.00,0.00], :other => [0.00,0.00]}}
-		
-		@counts = {:region => {:total => [],:newengland => [], :midatlantic => [], :eastnorthcentral => [], :westnorthcentral => [], :southatlantic => [], :eastsouthcentral => [], :westsouthcentral => [], :mountain => [], :pacific => [], :other => []}, :age => {:total => [], :eighteenthirtyfour => [], :thirtyfivefiftyfour => [], :fiftyfiveplus => [], :other => []}}
 
-		#------REGION---------
-		puts "Gathering region demos..."
-		@sample.each do |key,value|
-			case value['state'].to_s
-			when 'ME','NH','VT','MA','RI','CT'
-				@demos[:region][:newengland][0] += 1.00
-				@counts[:region][:newengland].push(key.to_s)
-			when 'NY','PA','NJ'
-				@demos[:region][:midatlantic][0] += 1.00
-				@counts[:region][:midatlantic].push(key.to_s)
-			when 'WI','MI','IL','IN','OH'
-				@demos[:region][:eastnorthcentral][0] += 1.00
-				@counts[:region][:eastnorthcentral].push(key.to_s)
-			when 'MO','ND','SD','NE','KS','MN','IA'
-				@demos[:region][:westnorthcentral][0] += 1.00
-				@counts[:region][:westnorthcentral].push(key.to_s)
-			when 'DE','MD','DC','VA','WV','NC','SC','GA','FL'
-				@demos[:region][:southatlantic][0] += 1.00
-				@counts[:region][:southatlantic].push(key.to_s)
-			when 'KY','TN','MS','AL'
-				@demos[:region][:eastsouthcentral][0] += 1.00
-				@counts[:region][:eastsouthcentral].push(key.to_s)
-			when 'OK','TX','AR','LA'
-				@demos[:region][:westsouthcentral][0] += 1.00
-				@counts[:region][:westsouthcentral].push(key.to_s)
-			when 'ID','MT','WY','NV','UT','CO','AZ','NM'
-				@demos[:region][:mountain][0] += 1.00
-				@counts[:region][:mountain].push(key.to_s)
-			when 'AK','WA','OR','CA','HI'
-				@demos[:region][:pacific][0] += 1.00
-				@counts[:region][:pacific].push(key.to_s)
-			else
-				@demos[:region][:other][0] += 1.00
-				@counts[:region][:other].push(key.to_s)
+		if requestarr.include?("region")
+			#------REGION---------
+			if @country = "us"
+					@demos = {:region => {:total => [0.00], :newengland => [0.00,0.00], :midatlantic => [0.00,0.00], :eastnorthcentral => [0.00,0.00], :westnorthcentral => [0.00,0.00], :southatlantic => [0.00,0.00], :eastsouthcentral => [0.00,0.00], :westsouthcentral => [0.00,0.00], :mountain => [0.00,0.00], :pacific => [0.00,0.00], :other => [0.00,0.00]}, :age => {:total => [0.00], :eighteenthirtyfour => [0.00,0.00], :thirtyfivefiftyfour => [0.00,0.00], :fiftyfiveplus => [0.00,0.00], :other => [0.00,0.00]}}
+					@counts = {:region => {:total => [],:newengland => [], :midatlantic => [], :eastnorthcentral => [], :westnorthcentral => [], :southatlantic => [], :eastsouthcentral => [], :westsouthcentral => [], :mountain => [], :pacific => [], :other => []}, :age => {:total => [], :eighteenthirtyfour => [], :thirtyfivefiftyfour => [], :fiftyfiveplus => [], :other => []}}
+
+				puts "Gathering region demos..."
+				@sample.each do |key,value|
+					case value['state'].to_s
+					when 'ME','NH','VT','MA','RI','CT'
+						@demos[:region][:newengland][0] += 1.00
+						@counts[:region][:newengland].push(key.to_s)
+					when 'NY','PA','NJ'
+						@demos[:region][:midatlantic][0] += 1.00
+						@counts[:region][:midatlantic].push(key.to_s)
+					when 'WI','MI','IL','IN','OH'
+						@demos[:region][:eastnorthcentral][0] += 1.00
+						@counts[:region][:eastnorthcentral].push(key.to_s)
+					when 'MO','ND','SD','NE','KS','MN','IA'
+						@demos[:region][:westnorthcentral][0] += 1.00
+						@counts[:region][:westnorthcentral].push(key.to_s)
+					when 'DE','MD','DC','VA','WV','NC','SC','GA','FL'
+						@demos[:region][:southatlantic][0] += 1.00
+						@counts[:region][:southatlantic].push(key.to_s)
+					when 'KY','TN','MS','AL'
+						@demos[:region][:eastsouthcentral][0] += 1.00
+						@counts[:region][:eastsouthcentral].push(key.to_s)
+					when 'OK','TX','AR','LA'
+						@demos[:region][:westsouthcentral][0] += 1.00
+						@counts[:region][:westsouthcentral].push(key.to_s)
+					when 'ID','MT','WY','NV','UT','CO','AZ','NM'
+						@demos[:region][:mountain][0] += 1.00
+						@counts[:region][:mountain].push(key.to_s)
+					when 'AK','WA','OR','CA','HI'
+						@demos[:region][:pacific][0] += 1.00
+						@counts[:region][:pacific].push(key.to_s)
+					else
+						@demos[:region][:other][0] += 1.00
+						@counts[:region][:other].push(key.to_s)
+					end
+					@demos[:region][:total][0] += 1.00
+					@counts[:region][:total].push(key.to_s)
+				end
+			elsif @country = 'ca'
+					@demos = {:region => {:total => [0.00], :bc => [0.00,0.00], :ab => [0.00,0.00], :sk_mb => [0.00,0.00], :on => [0.00,0.00], :qc => [0.00,0.00], :atl => [0.00,0.00], :nth => [0.00,0.00], :other => [0.00,0.00]}, :age => {:total => [0.00], :eighteenthirtyfour => [0.00,0.00], :thirtyfivefiftyfour => [0.00,0.00], :fiftyfiveplus => [0.00,0.00], :other => [0.00,0.00]}}
+					@counts = {:region => {:total => [],:bc => [], :ab => [], :sk_mb => [], :on => [], :qc => [], :atl => [], :nth => [], :other => []}, :age => {:total => [], :eighteenthirtyfour => [], :thirtyfivefiftyfour => [], :fiftyfiveplus => [], :other => []}}
+				puts "Gathering region demos..."
+				@sample.each do |key,value|
+					case value['state'].to_s
+					when 'BC'
+						@demos[:region][:bc][0] += 1.00
+						@counts[:region][:bc].push(key.to_s)
+					when 'AB'
+						@demos[:region][:ab][0] += 1.00
+						@counts[:region][:ab].push(key.to_s)
+					when 'SK','MB'
+						@demos[:region][:sk_mb][0] += 1.00
+						@counts[:region][:sk_mb].push(key.to_s)
+					when 'ON'
+						@demos[:region][:on][0] += 1.00
+						@counts[:region][:on].push(key.to_s)
+					when 'QC'
+						@demos[:region][:qc][0] += 1.00
+						@counts[:region][:qc].push(key.to_s)
+					when 'NB','PE','NS','NL'
+						@demos[:region][:atl][0] += 1.00
+						@counts[:region][:atl].push(key.to_s)
+					when 'YK','NT','NW'
+						@demos[:region][:nth][0] += 1.00
+						@counts[:region][:nth].push(key.to_s)
+					else
+						@demos[:region][:other][0] += 1.00
+						@counts[:region][:other].push(key.to_s)
+					end
+					@demos[:region][:total][0] += 1.00
+					@counts[:region][:total].push(key.to_s)
+				end
 			end
-			@demos[:region][:total][0] += 1.00
-			@counts[:region][:total].push(key.to_s)
 		end
 
-		#------AGE---------
-		puts "Gathering age demos..."
-		@sample.each do |key,value|
-			age = 2013 - value['fax'].to_s.match(/[0-9]{4}/).to_s.to_i
-			case age
-			when 18..34
-				@demos[:age][:eighteenthirtyfour][0] += 1.00
-				@counts[:age][:eighteenthirtyfour].push(key.to_s)
-			when 35..54
-				@demos[:age][:thirtyfivefiftyfour][0] += 1.00
-				@counts[:age][:thirtyfivefiftyfour].push(key.to_s)
-			when 55..150
-				@demos[:age][:fiftyfiveplus][0] += 1.00
-				@counts[:age][:fiftyfiveplus].push(key.to_s)
-			else
-				@demos[:age][:other][0] += 1.00
-				@counts[:age][:other].push(key.to_s)
+		if requestarr.include?("age")
+			#------AGE---------
+			puts "Gathering age demos..."
+			@sample.each do |key,value|
+				age = 2013 - value['fax'].to_s.match(/[0-9]{4}/).to_s.to_i
+				case age
+				when 18..34
+					@demos[:age][:eighteenthirtyfour][0] += 1.00
+					@counts[:age][:eighteenthirtyfour].push(key.to_s)
+				when 35..54
+					@demos[:age][:thirtyfivefiftyfour][0] += 1.00
+					@counts[:age][:thirtyfivefiftyfour].push(key.to_s)
+				when 55..150
+					@demos[:age][:fiftyfiveplus][0] += 1.00
+					@counts[:age][:fiftyfiveplus].push(key.to_s)
+				else
+					@demos[:age][:other][0] += 1.00
+					@counts[:age][:other].push(key.to_s)
+				end
+				@demos[:age][:total][0] += 1.00
+				@counts[:age][:total].push(key.to_s)
 			end
-			@demos[:age][:total][0] += 1.00
-			@counts[:age][:total].push(key.to_s)
 		end
 		puts "Done."
 		puts "Calulating Percentages..."
