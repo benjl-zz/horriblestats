@@ -1,34 +1,48 @@
 require 'backbone.rb'
 
-puts "Enter CSV for user data. Leave blank for user_data.csv, 1 for subsample"
-userdata = gets.chomp
-if userdata === ''
-	userdata = "user_data.csv"
-elsif userdata === '1'
-	userdata = "user_subsample.csv"
+params = {}
+
+puts "Enter CSV filename for user data (required)"
+params[:userdata] = gets.chomp
+
+puts "Is ballot tabultion required? (y or n)"
+ballotreq = gets.chomp
+if ballotreq === "y"
+	puts "Enter CSV filename for ballot data..."
+	params[:ballotdata] = gets.chomp
+else
+	params[:ballotdata] = false
 end
 
-puts "Enter CSV for ballot data. Leave blank for user_ballots.csv, 1 for subsample"
-ballotdata = gets.chomp
-if ballotdata === ''
-	ballotdata = "user_ballots.csv"
-elsif ballotdata === '1'
-	ballotdata = "user_ballot_sub.csv"
+puts "Is survey tabultion required? (y or n)"
+surveyreq = gets.chomp
+if surveyreq === "y"
+	puts "Enter CSV filename for sutvey data..."
+	params[:surveydata] = gets.chomp
+else
+	params[:surveydata] = false
 end
 
-puts "Enter CSV for survey data..."
-survey = gets.chomp
-
-puts "Enter country of promotion (ca or us)."
+puts "Is promotion Canadian or American? (ca or us)"
 country = gets.chomp
+if country === "ca"
+	params[:country] = "ca"
+elsif country === "us"
+	params[:country] = "us"
+else
+	params[:country] = false
+end
 
+puts "Which demographic categories should be tabulated? (region & age available - separate with a comma)"
+dems = gets.chomp
 
+sample = Sample.new(params)
 
-sample = Sample.new(userdata,ballotdata,country,survey)
+sample.generate_demos(dems.split(','))
 
-dems = sample.generate_demos(['region','age'])
+sample.stubify('ballots_hs.csv', dems.split(',')) if ballotreq === 'y'
 
-sample.printify('demos_sobeys.csv',['region','age'])
+sample.surveyify('survey_hs.csv', dems.split(',')) if surveyreq === 'y'
 
 puts "OPERATION COMPLETED BITCHES! :D"
 

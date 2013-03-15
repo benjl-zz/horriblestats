@@ -1,24 +1,20 @@
 require 'csv'
 
 class Sample
-	attr_accessor :user_filename, :ballot_filename
 
-	def initialize(user_filename,ballot_filename,country,survey_filename)
+	def initialize(params)
 		#Parses defined CSV value as a nested Hash in the format of "id" => "row" where row is itself header => field. Accessed ex: sample["411"]["email"]		
+		@params = params
 		@sample = {} #hash of hashes containing user data (:411 => :email => 'example@example.com')
 		@headers = [] #array of headers from LDP_User_Basic SQL file
 		@btypes = []
-		@country = country #ca or us
-		bheads = []
-		sheads = []
+		@country = @params[:country]
 		a = {}
 		linecount = 0
-		output = ""
-
 
 		#------USER FILE---------
-		puts "Opening user file (this can take a very long time)..."
-		CSV.open("#{user_filename}", 'r', ',') do |row|
+		puts "Opening user file..."
+		CSV.open("#{@params[:userdata]}", 'r', ',') do |row|
 			if linecount === 0
 				(0..row.length).each do |x|
 					@headers.push(row[x])
@@ -39,65 +35,6 @@ class Sample
 			print output
 		end
 		puts "User file succesfully loaded"
-
-
-		#------BALLOT FILE---------
-		puts "Opening ballot file (this will take an even longer time)..."
-		linecount = 0
-		CSV.open("#{ballot_filename}", 'r', ',') do |row|
-			if linecount === 0
-				(0..row.length-1).each do |x|
-					bheads.push(row[x])
-				end
-			elsif !@sample[row[1]].nil?
-				@sample[row[1]].merge!(row[2] => true)
-				@btypes << row[2]
-			else
-				puts "WARNING: User id in Ballot file not located in User file. ID:#{row[1]}"
-			end
-			if linecount % 2 === 0
-				output = "working o" + "\r"
-			else
-				output = "working *" + "\r"
-			end
-			linecount += 1
-			print output
-		end
-		puts "Ballot file succesfully loaded"
-
-		#------SURVEY FILE---------
-		puts "Opening survey file (guess what - it takes a while!)..."
-		linecount = 0
-		answers = {}
-		CSV.open("#{survey_filename}", 'r', ',') do |row|
-			if linecount === 0
-				(1..row.length-1).each do |x|
-					sheads.push(row[x])
-				end
-			else
-				(1..row.length-1).each do |y|
-					if !@sample[row[0]].nil?
-						answers[sheads[y]] = row[y]
-					end
-				end
-				if !@sample[row[0]].nil?
-					@sample[row[0]]['responses'] = answers
-				else
-					puts "User #{row[0]} not found in User file. Excluding."
-				end
-			end
-			answers = {}
-			linecount += 1
-			if linecount % 2 === 0
-				output = "working o" + "\r"
-			else
-				output = "working *" + "\r"
-			end
-			print output
-		end
-		puts "Survey file succesfully loaded"
-		puts "#{@sample['440']}"
-
 	end
 
 	def generate_demos(requestarr)
@@ -217,8 +154,9 @@ class Sample
 		return @demos
 	end
 
-	def printify(filename,requestarr)
+	def stubify(filename,requestarr)
 		#takes an array of the names of the available demos then iterates over them creating arrays formated for pringing to the CSV
+		bheads = []
 		demo_arr = ['']
 		value_arr = ['']
 		pct_arr = ['']
@@ -227,6 +165,31 @@ class Sample
 		stubcount2 = 0
 		result = 0
 
+		#------LOADING BALLOT FILE---------
+		puts "Opening ballot file..."
+		linecount = 0
+		CSV.open("#{@params[:ballotdata]}", 'r', ',') do |row|
+			if linecount === 0
+				(0..row.length-1).each do |x|
+					bheads.push(row[x])
+				end
+			elsif !@sample[row[1]].nil?
+				@sample[row[1]].merge!(row[2] => true)
+				@btypes << row[2]
+			else
+				puts "WARNING: User id in Ballot file not located in User file. ID:#{row[1]}"
+			end
+			if linecount % 2 === 0
+				output = "working o" + "\r"
+			else
+				output = "working *" + "\r"
+			end
+			linecount += 1
+			print output
+		end
+		puts "Ballot file succesfully loaded"
+
+		#------CALCULATING RESULTS & PREPPING FOR PRINTING---------
 		stub_names = @btypes.uniq!
 		stub_names.each do |stub|
 			stub_arr[0] << [stub]
@@ -263,6 +226,8 @@ class Sample
 				stubcount = 0
 			end
 		end
+		
+		#------PRINTING RESULTS TO FILE---------
 		CSV.open("#{filename}", 'w') do |writer|
 			writer << demo_arr
 			writer << value_arr
@@ -284,6 +249,44 @@ class Sample
 			}
 			counter += 1
 		end
+	end
+
+	def surveyify(filename,requestarr)
+		#------SURVEY FILE---------
+		puts "Opening survey file..."
+		sheads = []
+		linecount = 0
+		answers = {}
+		CSV.open("#{@params[:surveydata]}", 'r', ',') do |row|
+			if linecount === 0
+				(1..row.length-1).each do |x|
+					sheads.push(row[x])
+				end
+			else
+				(1..row.length-1).each do |y|
+					if !@sample[row[0]].nil?
+						answers[sheads[y]] = row[y]
+					end
+				end
+				if !@sample[row[0]].nil?
+					@sample[row[0]]['responses'] = answers #CURRENTLY JUST PUTS THE ENTIRE ARRAY AS ONE STRING - TOTALLY USELESS
+				else
+					puts "User #{row[0]} not found in User file. Excluding."
+				end
+			end
+			answers = {}
+			linecount += 1
+			if linecount % 2 === 0
+				output = "working o" + "\r"
+			else
+				output = "working *" + "\r"
+			end
+			print output
+		end
+		puts "Survey file succesfully loaded"
+		puts "#{@sample['440']['responses']}"
+		puts "#{@sample['440']['responses']['q1']}"
+		puts "#{@sample['440']['responses'][0]}"
 	end
 
 	def get_ballot_types()
