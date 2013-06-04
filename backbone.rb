@@ -251,44 +251,6 @@ class Sample
 		end
 	end
 
-	def surveyify(filename,requestarr)
-		#------SURVEY FILE---------
-		puts "Opening survey file..."
-		sheads = []
-		linecount = 0
-		answers = {}
-		CSV.open("#{@params[:surveydata]}", 'r', ',') do |row|
-			if linecount === 0
-				(1..row.length-1).each do |x|
-					sheads.push(row[x])
-				end
-			else
-				(1..row.length-1).each do |y|
-					if !@sample[row[0]].nil?
-						answers[sheads[y]] = row[y]
-					end
-				end
-				if !@sample[row[0]].nil?
-					@sample[row[0]]['responses'] = answers #CURRENTLY JUST PUTS THE ENTIRE ARRAY AS ONE STRING - TOTALLY USELESS
-				else
-					puts "User #{row[0]} not found in User file. Excluding."
-				end
-			end
-			answers = {}
-			linecount += 1
-			if linecount % 2 === 0
-				output = "working o" + "\r"
-			else
-				output = "working *" + "\r"
-			end
-			print output
-		end
-		puts "Survey file succesfully loaded"
-		puts "#{@sample['440']['responses']}"
-		puts "#{@sample['440']['responses']['q1']}"
-		puts "#{@sample['440']['responses'][0]}"
-	end
-
 	def get_ballot_types()
 		#returns an array containing each different type of entry ballot
 		return @btypes.uniq!
