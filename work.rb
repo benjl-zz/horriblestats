@@ -14,15 +14,6 @@ else
 	params[:ballotdata] = false
 end
 
-puts "Is survey tabultion required? (y or n)"
-surveyreq = gets.chomp
-if surveyreq === "y"
-	puts "Enter CSV filename for sutvey data..."
-	params[:surveydata] = gets.chomp
-else
-	params[:surveydata] = false
-end
-
 puts "Is promotion Canadian or American? (ca or us)"
 country = gets.chomp
 if country === "ca"
